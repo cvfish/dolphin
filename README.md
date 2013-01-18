@@ -1,4 +1,4 @@
 dolphin
 =======
 
-An extensible library for machine learning and probabilistic inference
+An C++ extensible library for machine learning and probabilistic inference
