@@ -13,6 +13,8 @@
 #ifndef DOLPHIN_IMPORT_LMAT_H_
 #define DOLPHIN_IMPORT_LMAT_H_
 
+#include <dolphin/common/common_base.h>
+
 #include <light_mat/matrix/matrix_classes.h>
 #include <light_mat/matexpr/mat_arith.h>
 #include <light_mat/matexpr/mat_emath.h>
@@ -21,9 +23,17 @@
 
 namespace dolphin
 {
+	using lmat::dimension;
+	using lmat::matrix_shape;
+
 	using lmat::IMatrixXpr;
 	using lmat::IEWiseMatrix;
 	using lmat::IRegularMatrix;
+
+	using lmat::copy;
+	using lmat::fill;
+	using lmat::zero;
+	using lmat::copy_from;
 
 	using lmat::dense_matrix;
 	using lmat::dense_col;
@@ -48,6 +58,13 @@ namespace dolphin
 	using lmat::is_empty;
 	using lmat::is_scalar;
 	using lmat::is_square;
+
+	using lmat::in_;
+	using lmat::out_;
+	using lmat::in_out_;
+
+	using lmat::ewise;
+	using lmat::percol;
 
 }
 

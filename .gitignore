@@ -19,3 +19,4 @@ build/
 # Eclipse projects
 .project
 .cproject
+.settings/
