@@ -23,7 +23,7 @@ namespace dolphin
 		lmat::supports_linear_macc<Indices>::value &&
 		supports_linear_index<Counts>::value,
 	void>::type
-	add_counts(
+	_add_counts(
 			const IEWiseMatrix<Indices, TI>& I,
 			IRegularMatrix<Counts, TC>& counts)
 	{
@@ -42,6 +42,15 @@ namespace dolphin
 				++ cnts[k];
 			}
 		}
+	}
+
+
+	template<typename TI, class Indices, typename TC, class Counts>
+	inline void add_counts(
+			const IEWiseMatrix<Indices, TI>& I,
+			IRegularMatrix<Counts, TC>& counts)
+	{
+		_add_counts(I, counts);
 	}
 
 
@@ -104,7 +113,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, result, lmat::maximum_folder<T>());
+		dispatch_accum(values, I, result, lmat::minimum_folder<T>());
 	}
 
 
@@ -187,8 +196,8 @@ namespace dolphin
 		is_percol_contiguous<Result>::value,
 	void>::type
 	dispatch_accum_cols(
-			const IEWiseMatrix<JSubs, TI>& J,
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result,
 			const Folder& folder)
 	{
@@ -224,36 +233,39 @@ namespace dolphin
 		for (index_t j = 0; j < n; ++j)
 		{
 			index_t cj = static_cast<index_t>(rd_j.scalar(j));
-			vker.apply(m, rd.col(j), wt.col(cj));
+			if (cj >= 0 && cj < K)
+			{
+				vker.apply(m, wt.col(cj), rd.col(j));
+			}
 		}
 	}
 
 
 	template<typename TI, class JSubs, typename T, class Values, class Result>
 	inline void dispatch_sum_cols(
-			const IEWiseMatrix<JSubs, TI>& J,
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(J, values, result, lmat::sum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::sum_folder<T>());
 	}
 
 	template<typename TI, class JSubs, typename T, class Values, class Result>
 	inline void dispatch_max_cols(
-			const IEWiseMatrix<JSubs, TI>& J,
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(J, values, result, lmat::maximum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::maximum_folder<T>());
 	}
 
 	template<typename TI, class JSubs, typename T, class Values, class Result>
 	inline void dispatch_min_cols(
-			const IEWiseMatrix<JSubs, TI>& J,
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(J, values, result, lmat::minimum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::minimum_folder<T>());
 	}
 
 
@@ -264,8 +276,8 @@ namespace dolphin
 		is_percol_contiguous<Result>::value,
 	void>::type
 	dispatch_accum_rows(
-			const IEWiseMatrix<ISubs, TI>& I,
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result,
 			const Folder& folder)
 	{
@@ -274,10 +286,12 @@ namespace dolphin
 
 		const index_t m = v.nrows();
 		const index_t n = v.ncolumns();
-		const index_t K = r.ncolumns();
+		const index_t K = r.nrows();
 
 		check_arg( I.nelems() == m, "The sizes of J and values are inconsistent" );
 		check_arg( r.ncolumns() == n, "The numbers of columns in values and result are inconsistent." );
+
+		auto rd_i = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
 
 		for (index_t j = 0; j < n; ++j)
 		{
@@ -286,53 +300,41 @@ namespace dolphin
 
 			for (index_t i = 0; i < m; ++i)
 			{
-				index_t ci = I[i];
-				folder.fold(rj[ci], vj[i]);
+				index_t ci = rd_i.scalar(i);
+				if (ci >= 0 && ci < K)
+				{
+					folder.fold(rj[ci], vj[i]);
+				}
 			}
 		}
 	}
 
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
-	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
-		is_percol_contiguous<Values>::value &&
-		is_percol_contiguous<Result>::value,
-	void>::type
-	dispatch_sum_rows(
-			const IEWiseMatrix<ISubs, TI>& I,
+	inline void dispatch_sum_rows(
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(I, values, result, lmat::sum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::sum_folder<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
-	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
-		is_percol_contiguous<Values>::value &&
-		is_percol_contiguous<Result>::value,
-	void>::type
-	dispatch_max_rows(
-			const IEWiseMatrix<ISubs, TI>& I,
+	inline void dispatch_max_rows(
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(I, values, result, lmat::maximum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::maximum_folder<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
-	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
-		is_percol_contiguous<Values>::value &&
-		is_percol_contiguous<Result>::value,
-	void>::type
-	dispatch_min_rows(
-			const IEWiseMatrix<ISubs, TI>& I,
+	inline void dispatch_min_rows(
 			const IEWiseMatrix<Values, T>& values,
+			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(I, values, result, lmat::minimum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::minimum_folder<T>());
 	}
 
 }

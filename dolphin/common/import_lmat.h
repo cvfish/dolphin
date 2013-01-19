@@ -66,6 +66,59 @@ namespace dolphin
 	using lmat::ewise;
 	using lmat::percol;
 
+	// import math functions
+
+	using lmat::max;
+	using lmat::min;
+	using lmat::cond;
+	using lmat::clamp;
+	using lmat::fma;
+
+	using lmat::abs;
+	using lmat::sqr;
+	using lmat::cube;
+	using lmat::cbrt;
+	using lmat::rcp;
+	using lmat::rsqrt;
+
+	using lmat::floor;
+	using lmat::ceil;
+	using lmat::round;
+	using lmat::trunc;
+
+	using lmat::signbit;
+	using lmat::isfinite;
+	using lmat::isinf;
+	using lmat::isnan;
+
+	using lmat::exp;
+	using lmat::log;
+	using lmat::log10;
+	using lmat::xlogx;
+	using lmat::xlogy;
+
+	using lmat::exp2;
+	using lmat::log2;
+	using lmat::expm1;
+	using lmat::log1p;
+
+	using lmat::sin;
+	using lmat::cos;
+	using lmat::tan;
+
+	using lmat::asin;
+	using lmat::acos;
+	using lmat::atan;
+	using lmat::atan2;
+
+	using lmat::sinh;
+	using lmat::cosh;
+	using lmat::tanh;
+
+	using lmat::asinh;
+	using lmat::acosh;
+	using lmat::atanh;
+
 }
 
 #endif
