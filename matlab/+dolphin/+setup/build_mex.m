@@ -52,7 +52,8 @@ else
     dep_opts = {};
 end
 
-opts = [{['-I' lmat_inc], '-outdir', outdir}, dep_opts, varargin];
+opts = [{['-I' lmat_inc], '-outdir', outdir, '-DLMAT_USE_INTEL_SVML'}, ...
+    dep_opts, varargin];
 
 mex(filename, opts{:});
     
