@@ -37,10 +37,8 @@ else
 end
    
 if ~isempty(tarlist)
-    stars = cellfun(@(t) [t '.cpp'], tarlist, ...
-        'UniformOutput', false);
     
-    [tf, loc] = ismember(stars, {targets.name});
+    [tf, loc] = ismember(tarlist, {targets.name});
     if ~all(tf)
         i = find(~tf, 1);
         error('build_all:invalidarg', ...
@@ -55,8 +53,8 @@ rootdir = fileparts(fileparts(mfilename('fullpath')));
 
 for i = 1 : length(targets)
     t = targets(i);
-    srcpath = fullfile(rootdir, t.name);
-    mexpath = [srcpath(1:end-3), mexext]; 
+    srcpath = fullfile(rootdir, [t.name '.cpp']);
+    mexpath = fullfile(rootdir, [t.name '.' mexext]); 
     
     if ~do_clean % Build
            
@@ -79,14 +77,14 @@ for i = 1 : length(targets)
         
         if updated
             fprintf('[TARGET] %s is updated (last modified: %s)\n', ...
-                t.name(1:end-4), info_mex.date);
+                t.name, info_mex.date);
             
             continue;
         end
         
         % build mex
         
-        fprintf('[TARGET] %s building ...\n', t.name(1:end-4));
+        fprintf('[TARGET] %s building ...\n', t.name);
         dolphin.setup.build_mex(srcpath, t.deps, '-O');
     
     else % Clean

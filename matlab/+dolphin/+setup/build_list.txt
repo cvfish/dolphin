@@ -2,3 +2,4 @@
 
 # common module
 
+pd_logdet: mwlapack
