@@ -16,6 +16,7 @@ repnum
 intcount
 private/dpaccum
 private/dpaccumv
+ktop
 
 dd_entropy : svml
 logsumexp : svml
