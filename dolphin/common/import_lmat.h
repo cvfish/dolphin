@@ -20,6 +20,9 @@
 #include <light_mat/matexpr/mat_emath.h>
 #include <light_mat/matexpr/mat_pred.h>
 #include <light_mat/matexpr/mat_cast.h>
+#include <light_mat/mateval/mat_reduce.h>
+#include <light_mat/mateval/mat_enorms.h>
+#include <light_mat/mateval/mat_allany.h>
 
 namespace dolphin
 {
@@ -41,12 +44,23 @@ namespace dolphin
 
 	using lmat::ref_matrix;
 	using lmat::ref_col;
+	using lmat::ref_row;
 	using lmat::ref_grid;
+
+	using lmat::cref_matrix;
+	using lmat::cref_col;
+	using lmat::cref_row;
+	using lmat::cref_grid;
 
 	using lmat::ref_block;
 	using lmat::ref_grid;
 	using lmat::step_col;
 	using lmat::step_row;
+
+	using lmat::cref_block;
+	using lmat::cref_grid;
+	using lmat::cstep_col;
+	using lmat::cstep_row;
 
 	using lmat::meta::is_contiguous;
 	using lmat::meta::is_percol_contiguous;
@@ -67,6 +81,8 @@ namespace dolphin
 	using lmat::percol;
 
 	// import math functions
+
+	namespace math = lmat::math;
 
 	using lmat::max;
 	using lmat::min;
@@ -118,6 +134,33 @@ namespace dolphin
 	using lmat::asinh;
 	using lmat::acosh;
 	using lmat::atanh;
+
+	// import reduction functions
+
+	using lmat::sum;
+	using lmat::mean;
+	using lmat::maximum;
+	using lmat::minimum;
+
+	using lmat::colwise_sum;
+	using lmat::colwise_mean;
+	using lmat::colwise_maximum;
+	using lmat::colwise_minimum;
+
+	using lmat::rowwise_sum;
+	using lmat::rowwise_mean;
+	using lmat::rowwise_maximum;
+	using lmat::rowwise_minimum;
+
+	namespace norms = lmat::norms;
+	using lmat::norm;
+	using lmat::colwise_norm;
+	using lmat::rowwise_norm;
+
+	using lmat::all;
+	using lmat::any;
+	using lmat::colwise_all;
+	using lmat::colwise_any;
 
 }
 

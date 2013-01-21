@@ -39,7 +39,7 @@ find_package(ICCLib)
 if (ICCLIB_FOUND)
 message(STATUS "[Dolphin] ICC Library found: ${ICCLIB_PATH}")
 else (ICCLIB_FOUND)
-message(STATUS "[Dolphin] ICC Library not found")
+message(FATAL_ERROR "[Dolphin] ICC Library not found")
 endif (ICCLIB_FOUND)
 
 set(SVML_FOUND ICCLIB_FOUND)
@@ -59,7 +59,8 @@ set(COMMON_BASE_HS
     ${INC}/common/properties.h)
     
 set(COMMON_TOOLS_HS
-    ${INC}/common/dpaccum.h)
+    ${INC}/common/dpaccum.h
+    ${INC}/common/common_calc.h)
 
 set(COMMON_HS
     ${COMMON_BASE_HS}
@@ -82,9 +83,11 @@ set(COMMON_TEST_HS
     ${COMMON_HS})
 
 add_executable(test_dpaccum ${COMMON_TEST_HS} common/test_dpaccum.cpp)
+add_executable(test_common_calc ${COMMON_TEST_HS} common/test_common_calc.cpp)
 
 set(COMMON_TESTS
-    test_dpaccum)
+    test_dpaccum
+    test_common_calc)
 
 # all tests
 
@@ -102,12 +105,16 @@ set(DOLPHIN_ALL_TESTS
 	
 foreach(tname ${DOLPHIN_ALL_TESTS})
 	target_link_libraries(${tname} test_main)
+    set_target_properties(${tname}
+        PROPERTIES
+        COMPILE_FLAGS "-DLMAT_USE_INTEL_SVML")
+    target_link_libraries(${tname} ${SVML_LIBRARY})
 endforeach(tname)	
-
 
 # Add tests
 
 foreach(tname ${DOLPHIN_ALL_TESTS})
+    
 	add_test(NAME ${tname} COMMAND ${tname})
 endforeach(tname)
 
