@@ -11,3 +11,5 @@ rand_normal : svml
 rand_exp : svml
 rand_gamma : svml
 rand_pick
+
+intcount

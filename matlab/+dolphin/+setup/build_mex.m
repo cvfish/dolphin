@@ -40,6 +40,7 @@ if isempty(lmat_inc)
         'The environment variable LIGHT_MATRIX_HOME is not set.');
 end
 
+dolp_inc = fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))));
 
 outdir = fileparts(filename);
 if isempty(outdir)
@@ -52,7 +53,7 @@ else
     dep_opts = {};
 end
 
-opts = [{['-I' lmat_inc], '-outdir', outdir, '-DLMAT_USE_INTEL_SVML'}, ...
+opts = [{['-I' lmat_inc], ['-I', dolp_inc], '-outdir', outdir, '-DLMAT_USE_INTEL_SVML'}, ...
     dep_opts, varargin];
 
 mex(filename, opts{:});

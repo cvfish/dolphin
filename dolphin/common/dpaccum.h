@@ -44,6 +44,36 @@ namespace dolphin
 		}
 	}
 
+	template<typename TI, class Iinds, typename TJ, class Jinds, typename TC, class Counts>
+	inline typename std::enable_if<
+		lmat::supports_linear_macc<Iinds>::value &&
+		lmat::supports_linear_macc<Jinds>::value,
+	void>::type
+	_add_counts(
+			const IEWiseMatrix<Iinds, TI>& I,
+			const IEWiseMatrix<Jinds, TJ>& J,
+			IRegularMatrix<Counts, TC>& counts)
+	{
+		Counts& cnts = counts.derived();
+
+		const index_t n = I.nelems();
+		const index_t M = counts.nrows();
+		const index_t N = counts.ncolumns();
+		auto rd_i = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
+		auto rd_j = lmat::make_vec_accessor(lmat::atags::scalar(), in_(J.derived()));
+
+		for (index_t i = 0; i < n; ++i)
+		{
+			index_t ci = static_cast<index_t>(rd_i.scalar(i));
+			index_t cj = static_cast<index_t>(rd_j.scalar(i));
+
+			if (ci >= 0 && ci < M && cj >= 0 && cj < N)
+			{
+				++ cnts(ci, cj);
+			}
+		}
+	}
+
 
 	template<typename TI, class Indices, typename TC, class Counts>
 	inline void add_counts(
@@ -51,6 +81,16 @@ namespace dolphin
 			IRegularMatrix<Counts, TC>& counts)
 	{
 		_add_counts(I, counts);
+	}
+
+
+	template<typename TI, class Iinds, typename TJ, class Jinds, typename TC, class Counts>
+	inline void add_counts(
+			const IEWiseMatrix<Iinds, TI>& I,
+			const IEWiseMatrix<Jinds, TJ>& J,
+			IRegularMatrix<Counts, TC>& counts)
+	{
+		_add_counts(I, J, counts);
 	}
 
 

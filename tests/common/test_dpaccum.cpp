@@ -12,7 +12,7 @@
 using namespace dolphin;
 using namespace dolphin::test;
 
-SIMPLE_CASE( test_add_counts )
+SIMPLE_CASE( test_add_counts_1d )
 {
 	const index_t K = 12;
 	const index_t len = 200;
@@ -30,6 +30,30 @@ SIMPLE_CASE( test_add_counts )
 
 	add_counts(I, cnts);
 	ASSERT_VEC_EQ(K, cnts, c0);
+}
+
+SIMPLE_CASE( test_add_counts_2d )
+{
+	const index_t M = 5;
+	const index_t N = 6;
+	const index_t len = 1000;
+	dense_matrix<uint32_t> cnts(M, N, zero());
+	dense_col<index_t> I(len);
+	dense_col<index_t> J(len);
+
+	fill_randi(I, (index_t)0, M+1);
+	fill_randi(J, (index_t)0, N+1);
+
+	dense_matrix<uint32_t> c0(M, N, zero());
+	for (index_t i = 0; i < len; ++i)
+	{
+		index_t ci = I[i];
+		index_t cj = J[i];
+		if (ci >= 0 && ci < M && cj >= 0 && cj < N) c0(ci, cj)++;
+	}
+
+	add_counts(I, J, cnts);
+	ASSERT_MAT_EQ(M, N, cnts, c0);
 }
 
 
@@ -393,7 +417,8 @@ SIMPLE_CASE( test_dispatch_min_rows )
 
 AUTO_TPACK( test_counts )
 {
-	ADD_SIMPLE_CASE( test_add_counts )
+	ADD_SIMPLE_CASE( test_add_counts_1d )
+	ADD_SIMPLE_CASE( test_add_counts_2d )
 }
 
 AUTO_TPACK( test_dpaccum_1d )
