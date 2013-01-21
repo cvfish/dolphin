@@ -81,17 +81,17 @@ namespace dolphin
 	}
 
 	template<typename T, class P, class R>
-	inline T colwise_entropy(const IEWiseMatrix<P, T>& p, IRegularMatrix<R, T>& r)
+	inline void colwise_entropy(const IEWiseMatrix<P, T>& p, IRegularMatrix<R, T>& r)
 	{
 		colwise_sum(xlogx(p), r);
-		r = -r;
+		r.derived() = -r;
 	}
 
 	template<typename T, class P, class R>
-	inline T rowwise_entropy(const IEWiseMatrix<P, T>& p, IRegularMatrix<R, T>& r)
+	inline void rowwise_entropy(const IEWiseMatrix<P, T>& p, IRegularMatrix<R, T>& r)
 	{
 		rowwise_sum(xlogx(p), r);
-		r = -r;
+		r.derived() = -r;
 	}
 
 

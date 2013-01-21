@@ -38,7 +38,8 @@ T_CASE( test_normalize_exp)
 	double se(0);
 	for (index_t i = 0; i < n; ++i) se += math::exp(x[i]);
 
-	dense_col<T> p0 = exp(x) / T(se);
+	dense_col<T> p0(n);
+	for (index_t i = 0; i < n; ++i) p0[i] = math::exp(x[i]) / T(se);
 
 	exp_terms<T> et;
 	et.set_logvalues(x);
@@ -46,13 +47,67 @@ T_CASE( test_normalize_exp)
 	dense_col<T> p;
 	et.normalize_to(p);
 
-	ASSERT_EQ(p.nrows(), 5);
+	ASSERT_EQ(p.nrows(), n);
 	ASSERT_EQ(p.ncolumns(), 1);
 
 	T tol = T(sizeof(T) == 4 ? 1.0e-6 : 1.0e-13);
-	ASSERT_VEC_APPROX(5, p, p0, tol);
+	ASSERT_VEC_APPROX(n, p, p0, tol);
 }
 
+T_CASE( test_full_entropy )
+{
+	const index_t n = 10;
+	dense_col<T> p(n);
+	fill_randr(p, T(-0.5), T(1.0));
+
+	double v0(0);
+	for (index_t i = 0; i < n; ++i)
+	{
+		if (p[i] > 0) v0 -= p[i] * math::log(p[i]);
+	}
+
+	T v = entropy(p);
+
+	T tol = T(sizeof(T) == 4 ? 1.0e-6 : 1.0e-13);
+	ASSERT_APPROX(v, v0, tol);
+}
+
+T_CASE( test_colwise_entropy )
+{
+	const index_t m = 10;
+	const index_t n = 12;
+	dense_matrix<T> p(m, n);
+	fill_randr(p, T(-0.2), T(1.0));
+
+	dense_row<T> r(n);
+	colwise_entropy(p, r);
+
+	dense_row<T> r0(n);
+	for (index_t j = 0; j < n; ++j)
+		r0[j] = entropy(p.column(j));
+
+	T tol = T(sizeof(T) == 4 ? 1.0e-6 : 1.0e-13);
+	ASSERT_VEC_APPROX(m, r, r0, tol);
+}
+
+
+T_CASE( test_rowwise_entropy )
+{
+	const index_t m = 10;
+	const index_t n = 12;
+	dense_matrix<T> p(m, n);
+	fill_randr(p, T(-0.2), T(1.0));
+
+	dense_row<T> r(m);
+	rowwise_entropy(p, r);
+
+	dense_row<T> r0(m);
+	for (index_t i = 0; i < m; ++i)
+		r0[i] = entropy(p.row(i));
+
+	T tol = T(sizeof(T) == 4 ? 1.0e-6 : 1.0e-13);
+	ASSERT_VEC_APPROX(m, r, r0, tol);
+}
 
 
 AUTO_TPACK( test_exp_terms )
@@ -62,4 +117,17 @@ AUTO_TPACK( test_exp_terms )
 	ADD_T_CASE( test_normalize_exp, float )
 	ADD_T_CASE( test_normalize_exp, double )
 }
+
+
+AUTO_TPACK( test_entropy )
+{
+	ADD_T_CASE( test_full_entropy, float )
+	ADD_T_CASE( test_full_entropy, double )
+	ADD_T_CASE( test_colwise_entropy, float )
+	ADD_T_CASE( test_colwise_entropy, double )
+	ADD_T_CASE( test_rowwise_entropy, float )
+	ADD_T_CASE( test_rowwise_entropy, double )
+}
+
+
 
