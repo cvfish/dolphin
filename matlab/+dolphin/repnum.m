@@ -11,7 +11,7 @@
 %
 %       yields: [10 10 20 30 30 30]
 %
-%   x = REPNUM(cnts);
+%   r = REPNUM(cnts);
 %
 %       This is equivalent to REPNUM(1:n, cnts) with n = length(cnts),
 %       but with a slightly faster implementation.
