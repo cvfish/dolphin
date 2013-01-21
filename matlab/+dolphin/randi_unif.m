@@ -3,7 +3,7 @@
 %   RANDI_UNIF(m, n, b);
 %       
 %       Creates an m-by-n matrix of uniformly distributed integers
-%       in [0, b], from Dolphin's random stream.
+%       in [1, b], from Dolphin's random stream.
 %
 %   RANDI_UNIF(m, n, a, b);
 %

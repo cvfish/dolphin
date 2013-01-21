@@ -2,7 +2,7 @@
  *
  * pd_logdet.cpp
  *
- * C++ mex implementation of pd_logdet
+ * Log-determinant of positive definite matrix
  *
  **********************************************************/
 
