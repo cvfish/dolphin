@@ -12,6 +12,7 @@ rand_exp : svml
 rand_gamma : svml
 rand_pick
 
+repnum
 intcount
 private/dpaccum
 private/dpaccumv
