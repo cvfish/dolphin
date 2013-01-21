@@ -33,11 +33,11 @@ namespace dolphin
 		, m_tmp_sum(0) { }
 
 		template<class A>
-		void set_logvalues(const IEWiseMatrix<A, T>& a)
+		void set_logvalues(const IRegularMatrix<A, T>& a)
 		{
 			m_max_logval = maximum(a);
 			m_shift = m_max_logval;
-			m_tmp = a - m_shift;
+			m_tmp = exp(a - m_shift);
 			m_tmp_sum = sum(m_tmp);
 		}
 
@@ -62,9 +62,8 @@ namespace dolphin
 		template<class P>
 		void normalize_to(IRegularMatrix<P, T>& p)
 		{
-			//T c = math::rcp(m_tmp_sum);
-			//p.require_size(m_tmp.nrows(), m_tmp.ncolumns());
-			//p.derived() = m_tmp * c;
+			T c = math::rcp(m_tmp_sum);
+			p.derived() = m_tmp * c;
 		}
 
 	private:
