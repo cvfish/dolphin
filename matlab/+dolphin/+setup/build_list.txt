@@ -13,3 +13,5 @@ rand_gamma : svml
 rand_pick
 
 intcount
+private/dpaccum
+private/dpaccumv
