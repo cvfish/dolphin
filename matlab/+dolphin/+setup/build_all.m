@@ -76,8 +76,7 @@ for i = 1 : length(targets)
         end
         
         if updated
-            fprintf('[TARGET] %s is updated (last modified: %s)\n', ...
-                t.name, info_mex.date);
+            fprintf('[TARGET] %s is updated\n', t.name);
             
             continue;
         end

@@ -15,3 +15,7 @@ rand_pick
 intcount
 private/dpaccum
 private/dpaccumv
+
+dd_entropy : svml
+logsumexp : svml
+nrmexp : svml
