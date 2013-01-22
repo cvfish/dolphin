@@ -3,6 +3,7 @@
 # common module
 
 pd_logdet: mwlapack
+symeig: mwlapack
 
 rand_prng
 randi_unif
