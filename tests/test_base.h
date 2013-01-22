@@ -209,13 +209,13 @@ namespace dolphin { namespace test {
 		const index_t n = dst.ncolumns();
 
 		D& d_ = dst.derived();
-		T c = b - a + 1;
+		unsigned int c = (unsigned int)(b - a + 1);
 
 		for (index_t j = 0; j < n; ++j)
 		{
 			for (index_t i = 0; i < m; ++i)
 			{
-				T v = T(std::rand()) % c;
+				T v = T((unsigned int)std::rand() % c);
 				d_(i, j) = a + v;
 			}
 		}

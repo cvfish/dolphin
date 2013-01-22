@@ -20,6 +20,8 @@
 #include <light_mat/matexpr/mat_emath.h>
 #include <light_mat/matexpr/mat_pred.h>
 #include <light_mat/matexpr/mat_cast.h>
+#include <light_mat/matexpr/repvec_expr.h>
+
 #include <light_mat/mateval/mat_reduce.h>
 #include <light_mat/mateval/mat_enorms.h>
 #include <light_mat/mateval/mat_allany.h>
@@ -84,6 +86,9 @@ namespace dolphin
 
 	namespace math = lmat::math;
 
+	using lmat::repcol;
+	using lmat::reprow;
+
 	using lmat::max;
 	using lmat::min;
 	using lmat::cond;
@@ -142,15 +147,27 @@ namespace dolphin
 	using lmat::maximum;
 	using lmat::minimum;
 
+	using lmat::sqsum;
+	using lmat::asum;
+	using lmat::amax;
+
 	using lmat::colwise_sum;
 	using lmat::colwise_mean;
 	using lmat::colwise_maximum;
 	using lmat::colwise_minimum;
 
+	using lmat::colwise_sqsum;
+	using lmat::colwise_asum;
+	using lmat::colwise_amax;
+
 	using lmat::rowwise_sum;
 	using lmat::rowwise_mean;
 	using lmat::rowwise_maximum;
 	using lmat::rowwise_minimum;
+
+	using lmat::rowwise_sqsum;
+	using lmat::rowwise_asum;
+	using lmat::rowwise_amax;
 
 	namespace norms = lmat::norms;
 	using lmat::norm;

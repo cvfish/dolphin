@@ -42,7 +42,15 @@ else (ICCLIB_FOUND)
 message(FATAL_ERROR "[Dolphin] ICC Library not found")
 endif (ICCLIB_FOUND)
 
-set(SVML_FOUND ICCLIB_FOUND)
+# BLAS and Lapack
+
+find_package(MKL)
+if (MKL_FOUND)
+message(STATUS "[LMAT] Intel MKL found: ${MKLROOT_PATH}")
+else (MKL_FOUND)
+message(FATAL_ERROR "[LMAT] Intel MKL not found")
+endif (MKL_FOUND)
+
 
 #==========================================================
 #
@@ -84,12 +92,17 @@ set(COMMON_TEST_HS
 
 add_executable(test_dpaccum ${COMMON_TEST_HS} common/test_dpaccum.cpp)
 add_executable(test_common_calc ${COMMON_TEST_HS} common/test_common_calc.cpp)
+add_executable(test_metrics ${COMMON_TEST_HS} common/test_metrics.cpp)
 
 set(COMMON_TESTS
     test_dpaccum
-    test_common_calc)
+    test_common_calc
+    test_metrics)
 
 # all tests
+
+set(DOLPHIN_TESTS_USING_LINALG
+    test_metrics)
 
 set(DOLPHIN_ALL_TESTS
     ${COMMON_TESTS})
@@ -102,6 +115,10 @@ set(DOLPHIN_ALL_TESTS
 #==========================================================
 
 # Link to test_main
+	
+foreach(tname ${DOLPHIN_TESTS_USING_LINALG})
+    target_link_libraries(${tname} ${MKL_LIBRARY})
+endforeach(tname)	
 	
 foreach(tname ${DOLPHIN_ALL_TESTS})
 	target_link_libraries(${tname} test_main)
