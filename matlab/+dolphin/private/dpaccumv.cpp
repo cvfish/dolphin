@@ -19,13 +19,12 @@ const int32_t DPC_MIN = 3;
 
 LMAT_FP_MEX(dpaccum, 3)
 {     
-    LMAT_MX(0, code, sca_, int32_t)
-    LMAT_MX(1, dim, sca_, double)
-    LMAT_MX(2, K, sca_, double)
+    LMAT_MX_SCA(0, code, int32_t)
+    LMAT_MX_SCA(1, dim, index_t)
+    LMAT_MX_SCA(2, K, index_t)
     LMAT_MX(3, x, mat_, T)
     LMAT_MX(4, I, col_, int32_t)
     
-    const index_t K_ = static_cast<index_t>(K);
     check_arg(K > 0, "K must be a positive integer.");
     
     const index_t m = x.nrows();
@@ -33,7 +32,7 @@ LMAT_FP_MEX(dpaccum, 3)
     
     if (dim == 1) // rows
     {
-        LMAT_MX_OUT(0, r, marray::numeric_matrix<T>(K_, n), mat_, T)
+        LMAT_MX_OUT(0, r, marray::numeric_matrix<T>(K, n), mat_, T)
         
         switch (code)
         {
@@ -52,7 +51,7 @@ LMAT_FP_MEX(dpaccum, 3)
     }
     else // cols
     {
-        LMAT_MX_OUT(0, r, marray::numeric_matrix<T>(m, K_), mat_, T)
+        LMAT_MX_OUT(0, r, marray::numeric_matrix<T>(m, K), mat_, T)
                         
         switch (code)
         {

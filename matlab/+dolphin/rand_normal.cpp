@@ -18,33 +18,30 @@ LMAT_SIMPLE_MEX(rand_normal)
     LMAT_MX_NARGINCHK(2, 4)
     LMAT_MX_NARGOUTCHK(0, 1)
     
-    LMAT_MX(0, m, sca_, double)
-    LMAT_MX(1, n, sca_, double)
-    
-    const index_t m_ = static_cast<index_t>(m);
-    const index_t n_ = static_cast<index_t>(n);
+    LMAT_MX_SCA(0, m, index_t)
+    LMAT_MX_SCA(1, n, index_t)
     
     default_rand_stream& rs = *get_default_rstream();
     
-    LMAT_MX_OUT(0, r, marray::double_matrix(m_, n_), mat_, double)    
+    LMAT_MX_OUT(0, r, marray::double_matrix(m, n), mat_, double)    
     
     if (nrhs == 2)
     {
-        r = randn(rs, m_, n_);
+        r = randn(rs, m, n);
     }
     else if (nrhs == 3)
     {
         double mu(0);
-        LMAT_MX(2, sigma, sca_, double)
+        LMAT_MX_SCA(2, sigma, double)
         
-        r = randn(rs, m_, n_, mu, sigma);
+        r = randn(rs, m, n, mu, sigma);
     }
     else 
     {
-        LMAT_MX(2, mu, sca_, double)
-        LMAT_MX(3, sigma, sca_, double)
+        LMAT_MX_SCA(2, mu, double)
+        LMAT_MX_SCA(3, sigma, double)
         
-        r = randn(rs, m_, n_, mu, sigma);
+        r = randn(rs, m, n, mu, sigma);
     }
 }
 

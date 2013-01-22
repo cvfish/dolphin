@@ -18,35 +18,29 @@ LMAT_SIMPLE_MEX(randi_unif)
     LMAT_MX_NARGINCHK(3, 4)
     LMAT_MX_NARGOUTCHK(0, 1)
     
-    LMAT_MX(0, m, sca_, double)
-    LMAT_MX(1, n, sca_, double)
-    
-    const index_t m_ = static_cast<index_t>(m);
-    const index_t n_ = static_cast<index_t>(n);
+    LMAT_MX_SCA(0, m, index_t)
+    LMAT_MX_SCA(1, n, index_t)
     
     default_rand_stream& rs = *get_default_rstream();
     
-    LMAT_MX_OUT(0, r, marray::numeric_matrix<int32_t>(m_, n_), mat_, int32_t)    
+    LMAT_MX_OUT(0, r, marray::numeric_matrix<int32_t>(m, n), mat_, int32_t)    
     
     if (nrhs == 3)
     {
-        LMAT_MX(2, b, sca_, double)
-        int32_t b_ = static_cast<int32_t>(b);
-        check_arg(b_ > 0, "The value of b must be positive.");
+        LMAT_MX_SCA(2, b, int32_t)
+        check_arg(b > 0, "The value of b must be positive.");
         
-        uniform_int_distr<int32_t> distr(1, b_);
-        r = rand_mat(distr, rs, m_, n_);
+        uniform_int_distr<int32_t> distr(1, b);
+        r = rand_mat(distr, rs, m, n);
     }
     else
     {
-        LMAT_MX(2, a, sca_, double)
-        LMAT_MX(3, b, sca_, double)
-        int32_t a_ = static_cast<int32_t>(a);
-        int32_t b_ = static_cast<int32_t>(b);
-        check_arg(a_ < b_, "The value of a must be less than b.");
+        LMAT_MX_SCA(2, a, int32_t)
+        LMAT_MX_SCA(3, b, int32_t)
+        check_arg(a < b, "The value of a must be less than b.");
         
-        uniform_int_distr<int32_t> distr(a_, b_);
-        r = rand_mat(distr, rs, m_, n_);
+        uniform_int_distr<int32_t> distr(a, b);
+        r = rand_mat(distr, rs, m, n);
     }
 }
 

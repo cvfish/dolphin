@@ -18,17 +18,15 @@ LMAT_SIMPLE_MEX(rand_pick)
     LMAT_MX_NARGINCHK(2, 2)
     LMAT_MX_NARGOUTCHK(0, 1)
     
-    LMAT_MX(0, n, sca_, double)
-    LMAT_MX(1, k, sca_, double)
-    const index_t n_ = static_cast<index_t>(n);
-    const index_t k_ = static_cast<index_t>(k);
+    LMAT_MX_SCA(0, n, index_t)
+    LMAT_MX_SCA(1, k, index_t)
     
-    check_arg(n_ > 0, "n must be a positive integer.");
-    check_arg(k >= 0 && k_ <= n_, "k must be in the range [0, n]");
+    check_arg(n > 0, "n must be a positive integer.");
+    check_arg(k >= 0 && k <= n, "k must be in the range [0, n]");
     
     default_rand_stream& rs = *get_default_rstream();
     
-    LMAT_MX_OUT(0, r, marray::numeric_matrix<int32_t>(1, k_), row_, int32_t)
+    LMAT_MX_OUT(0, r, marray::numeric_matrix<int32_t>(1, k), row_, int32_t)
     
     if (k == 0) return;
     
@@ -55,7 +53,7 @@ LMAT_SIMPLE_MEX(rand_pick)
             if (n > nthres) // use hash-based method
             {
                 past_avoid_rand_enumerator<int32_t> e(rs, n, 2 * k);
-                for (int32_t i = 0; i < k_; ++i)
+                for (int32_t i = 0; i < k; ++i)
                 {
                     r[i] = e.next() + 1;
                 }                
@@ -63,7 +61,7 @@ LMAT_SIMPLE_MEX(rand_pick)
             else // use shuffle-based method
             {
                 rand_shuffle_enumerator<int32_t> e(rs, n);
-                for (int32_t i = 0; i < k_; ++i)
+                for (int32_t i = 0; i < k; ++i)
                 {
                     r[i] = e.next() + 1;
                 }

@@ -20,13 +20,12 @@ LMAT_NUM_MEX(intcount, 1)
     
     if (nrhs == 2)
     {
-        LMAT_MX(0, K, sca_, double)
+        LMAT_MX_SCA(0, K, index_t)
         LMAT_MX(1, I, col_, T)
         
-        const index_t K_ = static_cast<index_t>(K);
         check_arg(K > 0, "K must be a positive integer.");
         
-        LMAT_MX_OUT(0, r, marray::numeric_matrix<uint32_t>(K_, 1), 
+        LMAT_MX_OUT(0, r, marray::numeric_matrix<uint32_t>(K, 1), 
                 col_, uint32_t);
         
         dolphin::add_counts(I - T(1), r);

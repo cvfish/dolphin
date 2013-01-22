@@ -39,4 +39,3 @@ LMAT_FP_MEX(logsumexp, 0)
         }
     }
 }
-

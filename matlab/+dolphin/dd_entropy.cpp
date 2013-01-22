@@ -13,7 +13,6 @@ using namespace lmat;
 using namespace lmat::matlab;
 using namespace dolphin;
 
-
 LMAT_FP_MEX(dd_entropy, 0)
 {
     LMAT_MX_NARGINCHK(1, 2)
@@ -38,12 +37,11 @@ LMAT_FP_MEX(dd_entropy, 0)
     }
     else
     {
-        LMAT_MX(1, dim, sca_, double)
-        int d = static_cast<int>(dim);
+        LMAT_MX_SCA(1, dim, int)
         
-        check_arg(d == 1 || d == 2, "dim must be either 1 or 2.");
+        check_arg(dim == 1 || dim == 2, "dim must be either 1 or 2.");
         
-        if (d == 1)  // colwise
+        if (dim == 1)  // colwise
         {   
             if (n == 1) // as a vector
             {

@@ -27,7 +27,7 @@ LMAT_SIMPLE_MEX( rand_prng )
     
     if (nrhs >= 1)
     {
-        LMAT_MX(0, seed, sca_, double)
+        LMAT_MX_SCA(0, seed, uint32_t)
         p->set_seed(static_cast<uint32_t>(seed));
     }
     
