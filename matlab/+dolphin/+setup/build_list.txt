@@ -22,3 +22,7 @@ ktop
 dd_entropy : svml
 logsumexp : svml
 nrmexp : svml
+
+# metrics module
+
++metrics/euclidean
