@@ -256,7 +256,7 @@ namespace dolphin
 
 	template<typename T, typename W>
 	DOLPHIN_ENSURE_INLINE
-	weuclidean_distance<T, W> weighted_euclidean(const IRegularMatrix<W, T>& weights)
+	inline weuclidean_distance<T, W> weighted_euclidean(const IRegularMatrix<W, T>& weights)
 	{
 		LMAT_CHECK_DIMS( is_column(weights) );
 		return weuclidean_distance<T, W>(weights.derived());
@@ -276,7 +276,7 @@ namespace dolphin
 
 	template<typename T, typename W>
 	DOLPHIN_ENSURE_INLINE
-	wsqeuclidean_distance<T, W> weighted_sqeuclidean(const IRegularMatrix<W, T>& weights)
+	inline wsqeuclidean_distance<T, W> weighted_sqeuclidean(const IRegularMatrix<W, T>& weights)
 	{
 		LMAT_CHECK_DIMS( is_column(weights) );
 		return wsqeuclidean_distance<T, W>(weights.derived());
@@ -296,7 +296,7 @@ namespace dolphin
 
 	template<typename T, typename W>
 	DOLPHIN_ENSURE_INLINE
-	wcityblock_distance<T, W> weighted_cityblock(const IRegularMatrix<W, T>& weights)
+	inline wcityblock_distance<T, W> weighted_cityblock(const IRegularMatrix<W, T>& weights)
 	{
 		LMAT_CHECK_DIMS( is_column(weights) );
 		return wcityblock_distance<T, W>(weights.derived());
@@ -372,7 +372,7 @@ namespace dolphin
 
 	template<typename T, typename W>
 	DOLPHIN_ENSURE_INLINE
-	wminkowski_distance<T, W> weighted_minkowski(const T& p, const IRegularMatrix<W, T>& weights)
+	inline wminkowski_distance<T, W> weighted_minkowski(const T& p, const IRegularMatrix<W, T>& weights)
 	{
 		LMAT_CHECK_DIMS( is_column(weights) );
 		return wminkowski_distance<T, W>(p, weights.derived());
@@ -413,7 +413,7 @@ namespace dolphin
 
 	template<typename T, typename W, typename TW>
 	DOLPHIN_ENSURE_INLINE
-	whamming_distance<T, W> weighted_hamming(type_<T>, const IRegularMatrix<W, TW>& weights)
+	inline whamming_distance<T, W> weighted_hamming(type_<T>, const IRegularMatrix<W, TW>& weights)
 	{
 		LMAT_CHECK_DIMS( is_column(weights) );
 		return whamming_distance<T, W>(weights.derived());
