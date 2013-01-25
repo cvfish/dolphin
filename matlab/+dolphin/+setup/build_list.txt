@@ -29,3 +29,8 @@ nrmexp : svml
 +metrics/sqeuc
 +metrics/hamdist
 +metrics/cosdist
+
++metrics/ldist_pw : svml, mwblas
++metrics/sqeuc_pw : mwblas
++metrics/hamdist_pw
++metrics/cosdist_pw : mwblas

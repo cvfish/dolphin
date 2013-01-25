@@ -67,11 +67,51 @@ void distance_port(
         }
         else
         {
-            _dist_check_dim(require_dim, a.nrows(), b.nrows());
-                                    
-            const index_t n = a.ncolumns();                        
+            _dist_check_dim(require_dim, a.nrows(), b.nrows());                                            
+            const index_t n = a.ncolumns();
+            check_arg( n == b.ncolumns(), 
+                    "a and b have different number of columns");
+            
             LMAT_MX_OUT(0, r, marray::numeric_matrix<RT>(1, n), row_, RT);
             dolphin::colwise(dist, a, b, r);
         }
     }
 }
+
+
+template<typename T, class Dist>
+void pw_distance_port(        
+        mxArray *plhs[],
+        const Dist& dist,
+        const cref_matrix<T>& a, 
+        const cref_matrix<T>& b, 
+        index_t require_dim = 0)
+{
+    typedef typename Dist::result_type RT;
+    
+    if (is_empty(b))
+    {
+        _dist_check_dim(require_dim, a.nrows(), a.nrows());
+        
+        const index_t n = a.ncolumns();
+        
+        LMAT_MX_OUT(0, r, marray::numeric_matrix<RT>(n, n), mat_, RT);
+        r = dolphin::pairwise(dist, a);
+    }
+    else
+    {                
+        _dist_check_dim(require_dim, a.nrows(), b.nrows());
+        
+        const index_t m = a.ncolumns();
+        const index_t n = b.ncolumns();
+        
+        LMAT_MX_OUT(0, r, marray::numeric_matrix<RT>(m, n), mat_, RT);
+        r = dolphin::pairwise(dist, a, b);
+    }
+}
+
+
+
+
+
+

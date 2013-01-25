@@ -812,6 +812,8 @@ namespace lmat
 
 		blas::gemm(a, b, dst_, 'T', 'N');
 		dst_ = T(1) - dst_ * sqrt(repcol(ra, n) * reprow(rb, m));
+
+		_postprocess_posdef_metrics(dst_, false);
 	}
 
 	template<typename T, class A, class D>
@@ -829,6 +831,8 @@ namespace lmat
 
 		blas::gemm(a, a, dst_, 'T', 'N');
 		dst_ = T(1) - dst_ * sqrt(repcol(ra, n) * reprow(as_row(ra), n));
+
+		_postprocess_posdef_metrics(dst_, true);
 	}
 }
 
