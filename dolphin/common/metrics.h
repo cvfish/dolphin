@@ -17,17 +17,30 @@
 #include <light_mat/linalg/blas_l3.h>
 #include <tuple>
 
-#define DOLPHIN_DEF_GENERIC_METRIC(Name, RT, IsPosDef, IsSym) \
-	template<typename T> struct Name; \
+#define DOLPHIN_DEF_GENERIC_METRIC_TRAITS(Name, RT, IsPosDef, IsSym) \
 	template<typename T> \
 	struct metric_traits<Name<T> > { \
 		typedef T input_type; \
 		typedef RT result_type; \
 		static const bool is_positive_definite = IsPosDef; \
 		static const bool is_symmetric = IsSym; \
-	}; \
+	};
+
+#define DOLPHIN_DEF_GENERIC_WMETRIC_TRAITS(Name, RT, IsPosDef, IsSym) \
+	template<typename T, typename W> \
+	struct metric_traits<Name<T, W> > { \
+		typedef T input_type; \
+		typedef RT result_type; \
+		static const bool is_positive_definite = IsPosDef; \
+		static const bool is_symmetric = IsSym; \
+	};
+
+#define DOLPHIN_DEF_GENERIC_METRIC(Name, RT, IsPosDef, IsSym) \
+	template<typename T> class Name; \
+	DOLPHIN_DEF_GENERIC_METRIC_TRAITS(Name, RT, IsPosDef, IsSym) \
 	template<typename T> \
-	struct Name : public dolphin::IMetric<Name<T> > { \
+	class Name : public dolphin::IMetric<Name<T> > { \
+	public: \
 		typedef T input_type; \
 		typedef RT result_type; \
 		template<class A, class B> \
@@ -35,6 +48,30 @@
 	template<typename T> \
 	template<class A, class B> \
 	inline RT Name<T>::operator() (const IEWiseMatrix<A, T>& a, const IEWiseMatrix<B, T>& b) const
+
+#define DOLPHIN_DEF_GENERIC_WMETRIC(Name, RT, IsPosDef, IsSym) \
+	template<typename T, typename W> class Name; \
+	DOLPHIN_DEF_GENERIC_WMETRIC_TRAITS(Name, RT, IsPosDef, IsSym) \
+	template<typename T, typename W> \
+	class Name : public dolphin::IMetric<Name<T, W> > { \
+	public: \
+		typedef T input_type; \
+		typedef RT weight_type; \
+		typedef RT result_type; \
+		DOLPHIN_ENSURE_INLINE \
+		Name(const W& w) : m_weights(w) { } \
+		DOLPHIN_ENSURE_INLINE \
+		const W& weights() const { return m_weights; } \
+		template<class A, class B> \
+		inline RT operator() (const IEWiseMatrix<A, T>& a, const IEWiseMatrix<B, T>& b) const; \
+	private: \
+		const W& m_weights; \
+	}; \
+	template<typename T, typename W> \
+	template<class A, class B> \
+	inline RT Name<T, W>::operator() (const IEWiseMatrix<A, T>& a, const IEWiseMatrix<B, T>& b) const
+
+
 
 
 namespace dolphin
@@ -205,20 +242,67 @@ namespace dolphin
 	 *
 	 ********************************************/
 
+	// Euclidean
+
 	DOLPHIN_DEF_GENERIC_METRIC(euclidean_distance, T, true, true)
 	{
 		return norm(a - b, norms::L2_());
 	}
+
+	DOLPHIN_DEF_GENERIC_WMETRIC(weuclidean_distance, T, true, true)
+	{
+		return math::sqrt(sum(weights() * sqr(a - b)));
+	}
+
+	template<typename T, typename W>
+	DOLPHIN_ENSURE_INLINE
+	weuclidean_distance<T, W> weighted_euclidean(const IRegularMatrix<W, T>& weights)
+	{
+		LMAT_CHECK_DIMS( is_column(weights) );
+		return weuclidean_distance<T, W>(weights.derived());
+	}
+
+	// Squared Euclidean
 
 	DOLPHIN_DEF_GENERIC_METRIC(sqeuclidean_distance, T, true, true)
 	{
 		return sqsum(a - b);
 	}
 
+	DOLPHIN_DEF_GENERIC_WMETRIC(wsqeuclidean_distance, T, true, true)
+	{
+		return sum(weights() * sqr(a - b));
+	}
+
+	template<typename T, typename W>
+	DOLPHIN_ENSURE_INLINE
+	wsqeuclidean_distance<T, W> weighted_sqeuclidean(const IRegularMatrix<W, T>& weights)
+	{
+		LMAT_CHECK_DIMS( is_column(weights) );
+		return wsqeuclidean_distance<T, W>(weights.derived());
+	}
+
+	// City block
+
 	DOLPHIN_DEF_GENERIC_METRIC(cityblock_distance, T, true, true)
 	{
 		return asum(a - b);
 	}
+
+	DOLPHIN_DEF_GENERIC_WMETRIC(wcityblock_distance, T, true, true)
+	{
+		return sum(weights() * abs(a - b));
+	}
+
+	template<typename T, typename W>
+	DOLPHIN_ENSURE_INLINE
+	wcityblock_distance<T, W> weighted_cityblock(const IRegularMatrix<W, T>& weights)
+	{
+		LMAT_CHECK_DIMS( is_column(weights) );
+		return wcityblock_distance<T, W>(weights.derived());
+	}
+
+	// Chebyshev
 
 	DOLPHIN_DEF_GENERIC_METRIC(chebyshev_distance, T, true, true)
 	{
@@ -226,16 +310,10 @@ namespace dolphin
 	}
 
 
-	template<typename T> class minkowski_distance;
+	// Minkowski
 
-	template<typename T>
-	struct metric_traits<minkowski_distance<T> >
-	{
-		typedef T input_type;
-		typedef T result_type;
-		static const bool is_positive_definite = true;
-		static const bool is_symmetric = true;
-	};
+	template<typename T> class minkowski_distance;
+	DOLPHIN_DEF_GENERIC_METRIC_TRAITS(minkowski_distance, T, true, true)
 
 	template<typename T>
 	class minkowski_distance : public IMetric<minkowski_distance<T> >
@@ -259,6 +337,49 @@ namespace dolphin
 		T m_inv_p;
 	};
 
+	template<typename T, typename W> class wminkowski_distance;
+	DOLPHIN_DEF_GENERIC_WMETRIC_TRAITS(wminkowski_distance, T, true, true)
+
+	template<typename T, typename W>
+	class wminkowski_distance : public IMetric<wminkowski_distance<T, W> >
+	{
+	public:
+		DOLPHIN_ENSURE_INLINE
+		wminkowski_distance(T p, const W& weights)
+		: m_p(p), m_inv_p(math::rcp(p)), m_weights(weights) { }
+
+		DOLPHIN_ENSURE_INLINE
+		T p() const { return m_p; }
+
+		DOLPHIN_ENSURE_INLINE
+		const W& weights() const
+		{
+			return m_weights;
+		}
+
+		template<class A, class B>
+		T operator() (const IEWiseMatrix<A, T>& a, const IEWiseMatrix<B, T>& b) const
+		{
+			return math::pow(sum(weights() * pow(abs(a - b), m_p)), m_inv_p);
+		}
+
+	private:
+		T m_p;
+		T m_inv_p;
+		const W& m_weights;
+	};
+
+
+	template<typename T, typename W>
+	DOLPHIN_ENSURE_INLINE
+	wminkowski_distance<T, W> weighted_minkowski(const T& p, const IRegularMatrix<W, T>& weights)
+	{
+		LMAT_CHECK_DIMS( is_column(weights) );
+		return wminkowski_distance<T, W>(p, weights.derived());
+	}
+
+
+	// Hamming
 
 	DOLPHIN_DEF_GENERIC_METRIC(hamming_distance, uint32_t, true, true)
 	{
@@ -274,6 +395,32 @@ namespace dolphin
 		return s;
 	}
 
+	DOLPHIN_DEF_GENERIC_WMETRIC(whamming_distance, typename lmat::matrix_traits<W>::value_type, true, true)
+	{
+		const index_t n = a.nelems();
+		LMAT_CHECK_DIMS( n == b.nelems() )
+
+		auto rd_a = lmat::make_vec_accessor(lmat::scalar_(), in_(a));
+		auto rd_b = lmat::make_vec_accessor(lmat::scalar_(), in_(b));
+
+		const W& w_ = weights();
+
+		result_type s(0);
+		for (index_t i = 0; i < n; ++i)
+			s += result_type(rd_a.scalar(i) != rd_b.scalar(i)) * w_[i];
+		return s;
+	}
+
+	template<typename T, typename W, typename TW>
+	DOLPHIN_ENSURE_INLINE
+	whamming_distance<T, W> weighted_hamming(type_<T>, const IRegularMatrix<W, TW>& weights)
+	{
+		LMAT_CHECK_DIMS( is_column(weights) );
+		return whamming_distance<T, W>(weights.derived());
+	}
+
+
+	// cosine distance
 
 	namespace internal
 	{

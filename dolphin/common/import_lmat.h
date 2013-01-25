@@ -29,6 +29,8 @@
 
 namespace dolphin
 {
+	using lmat::type_;
+
 	using lmat::dimension;
 	using lmat::matrix_shape;
 
