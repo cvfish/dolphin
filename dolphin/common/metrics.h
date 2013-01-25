@@ -641,6 +641,21 @@ namespace lmat
 
 	// sqeuclidean_distance
 
+	template<typename T, class D>
+	DOLPHIN_ENSURE_INLINE
+	inline void _postprocess_posdef_metrics(IRegularMatrix<D, T>& dst, bool selfpw)
+	{
+		D& dst_ = dst.derived();
+
+		dst_ = max(dst_, T(0));
+
+		if (selfpw)
+		{
+			auto dvs = dst_.diag();
+			dvs << T(0);
+		}
+	}
+
 	template<typename T, class A, class B, class D>
 	void evaluate(const dolphin::pairwise_metric_expr<dolphin::sqeuclidean_distance<T>, A, B>& expr,
 			IRegularMatrix<D, T>& dst)
@@ -660,6 +675,8 @@ namespace lmat
 
 		dst_ = repcol(sa2, n)  + reprow(sb2, m);
 		blas::gemm(T(-2), a, b, T(1), dst_, 'T', 'N');
+
+		_postprocess_posdef_metrics(dst_, false);
 	}
 
 	template<typename T, class A, class D>
@@ -677,8 +694,54 @@ namespace lmat
 		dst_ = repcol(sa2, n)  + reprow(as_row(sa2), n);
 		blas::gemm(T(-2), a, a, T(1), dst_, 'T', 'N');
 
-		auto dvs = dst_.diag();
-		dvs << T(0);
+		_postprocess_posdef_metrics(dst_, true);
+	}
+
+	template<typename T, class W, class A, class B, class D>
+	void evaluate(const dolphin::pairwise_metric_expr<dolphin::wsqeuclidean_distance<T, W>, A, B>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+		const A& a = expr.arg1();
+		const B& b = expr.arg2();
+		const W& w = expr.metric().weights();
+
+		const index_t m = a.ncolumns();
+		const index_t n = b.ncolumns();
+
+		dense_col<T> sa2(m);
+		dense_row<T> sb2(n);
+
+		colwise_sum(sqr(a) * repcol(w, m), sa2);
+		colwise_sum(sqr(b) * repcol(w, n), sb2);
+
+		dst_ = repcol(sa2, n)  + reprow(sb2, m);
+
+		dense_matrix<T> wa = a * repcol(w, m);
+		blas::gemm(T(-2), wa, b, T(1), dst_, 'T', 'N');
+
+		_postprocess_posdef_metrics(dst_, false);
+	}
+
+	template<typename T, class W, class A, class D>
+	void evaluate(const dolphin::self_pairwise_metric_expr<dolphin::wsqeuclidean_distance<T, W>, A>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+		const A& a = expr.arg();
+		const W& w = expr.metric().weights();
+
+		const index_t n = a.ncolumns();
+
+		dense_col<T> sa2(n);
+		colwise_sum(sqr(a) * repcol(w, n), sa2);
+
+		dst_ = repcol(sa2, n)  + reprow(as_row(sa2), n);
+
+		dense_matrix<T> wa = a * repcol(w, n);
+		blas::gemm(T(-2), wa, a, T(1), dst_, 'T', 'N');
+
+		_postprocess_posdef_metrics(dst_, true);
 	}
 
 	// euclidean_distance
@@ -704,6 +767,29 @@ namespace lmat
 		dst_ = dolphin::pairwise(sqdist, expr.arg());
 		dst_ = sqrt(dst_);
 	}
+
+	template<typename T, class W, class A, class B, class D>
+	void evaluate(const dolphin::pairwise_metric_expr<dolphin::weuclidean_distance<T, W>, A, B>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+
+		dolphin::wsqeuclidean_distance<T, W> sqdist(expr.metric().weights());
+		dst_ = dolphin::pairwise(sqdist, expr.arg1(), expr.arg2());
+		dst_ = sqrt(dst_);
+	}
+
+	template<typename T, class W, class A, class D>
+	void evaluate(const dolphin::self_pairwise_metric_expr<dolphin::weuclidean_distance<T, W>, A>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+
+		dolphin::wsqeuclidean_distance<T, W> sqdist(expr.metric().weights());
+		dst_ = dolphin::pairwise(sqdist, expr.arg());
+		dst_ = sqrt(dst_);
+	}
+
 
 	// cosine_distance
 
