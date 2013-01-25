@@ -17,12 +17,14 @@
 #include <light_mat/linalg/blas_l3.h>
 #include <tuple>
 
-#define DOLPHIN_DEF_GENERIC_METRIC(Name, RT) \
+#define DOLPHIN_DEF_GENERIC_METRIC(Name, RT, IsPosDef, IsSym) \
 	template<typename T> struct Name; \
 	template<typename T> \
 	struct metric_traits<Name<T> > { \
 		typedef T input_type; \
 		typedef RT result_type; \
+		static const bool is_positive_definite = IsPosDef; \
+		static const bool is_symmetric = IsSym; \
 	}; \
 	template<typename T> \
 	struct Name : public dolphin::IMetric<Name<T> > { \
@@ -112,20 +114,18 @@ namespace dolphin
 
 	template<class Metric, class Arg1, class Arg2>
 	class pairwise_metric_expr
-	: public IMatrixXpr<pairwise_metric_expr<Metric, Arg1, Arg2>, typename Metric::result_type>
+	: public lmat::matrix_xpr_base<pairwise_metric_expr<Metric, Arg1, Arg2> >
 	{
-		static const index_t CT_N1 = lmat::meta::ncols<Arg1>::value;
-		static const index_t CT_N2 = lmat::meta::ncols<Arg2>::value;
-		typedef matrix_shape<CT_N1, CT_N2> shape_type;
+		typedef lmat::matrix_xpr_base<pairwise_metric_expr<Metric, Arg1, Arg2> > base_t;
 
 	public:
-		typedef Metric distance_type;
+		typedef Metric metric_type;
 		typedef Arg1 arg1_type;
 		typedef Arg2 arg2_type;
 
 		pairwise_metric_expr(const Metric& metric, const Arg1& a1, const Arg2& a2)
-		: m_metric(metric), m_arg1(a1), m_arg2(a2)
-		, m_shape(a1.ncolumns(), a2.ncolumns() ){ }
+		: base_t(a1.ncolumns(), a2.ncolumns())
+		, m_metric(metric), m_arg1(a1), m_arg2(a2) { }
 
 		DOLPHIN_ENSURE_INLINE const Metric& metric() const
 		{
@@ -142,31 +142,39 @@ namespace dolphin
 			return m_arg2;
 		}
 
-		DOLPHIN_ENSURE_INLINE index_t nrows() const
-		{
-			return m_shape.nrows();
-		}
-
-		DOLPHIN_ENSURE_INLINE index_t ncolumns() const
-		{
-			return m_shape.ncolumns();
-		}
-
-		DOLPHIN_ENSURE_INLINE index_t nelems() const
-		{
-			return m_shape.nelems();
-		}
-
-		DOLPHIN_ENSURE_INLINE shape_type shape() const
-		{
-			return m_shape;
-		}
-
 	private:
 		const Metric& m_metric;
 		const Arg1& m_arg1;
 		const Arg2& m_arg2;
-		shape_type m_shape;
+	};
+
+	template<class Metric, class Arg>
+	class self_pairwise_metric_expr
+	: public lmat::matrix_xpr_base<self_pairwise_metric_expr<Metric, Arg> >
+	{
+		typedef lmat::matrix_xpr_base<self_pairwise_metric_expr<Metric, Arg> > base_t;
+
+	public:
+		typedef Metric metric_type;
+		typedef Arg arg_type;
+
+		self_pairwise_metric_expr(const Metric& metric, const Arg& a)
+		: base_t(a.ncolumns(), a.ncolumns())
+		, m_metric(metric), m_arg(a) { }
+
+		DOLPHIN_ENSURE_INLINE const Metric& metric() const
+		{
+			return m_metric;
+		}
+
+		DOLPHIN_ENSURE_INLINE const Arg& arg() const
+		{
+			return m_arg;
+		}
+
+	private:
+		const Metric& m_metric;
+		const Arg& m_arg;
 	};
 
 
@@ -181,28 +189,38 @@ namespace dolphin
 	}
 
 
+	template<class Metric, class Arg>
+	DOLPHIN_ENSURE_INLINE
+	inline self_pairwise_metric_expr<Metric, Arg>
+	pairwise(const IMetric<Metric>& metric,
+			const IRegularMatrix<Arg, typename metric_traits<Metric>::input_type>& a)
+	{
+		return self_pairwise_metric_expr<Metric, Arg>(metric.derived(), a.derived());
+	}
+
+
 	/********************************************
 	 *
 	 *  metrics between vectors
 	 *
 	 ********************************************/
 
-	DOLPHIN_DEF_GENERIC_METRIC(euclidean_distance, T)
+	DOLPHIN_DEF_GENERIC_METRIC(euclidean_distance, T, true, true)
 	{
 		return norm(a - b, norms::L2_());
 	}
 
-	DOLPHIN_DEF_GENERIC_METRIC(sqeuclidean_distance, T)
+	DOLPHIN_DEF_GENERIC_METRIC(sqeuclidean_distance, T, true, true)
 	{
 		return sqsum(a - b);
 	}
 
-	DOLPHIN_DEF_GENERIC_METRIC(cityblock_distance, T)
+	DOLPHIN_DEF_GENERIC_METRIC(cityblock_distance, T, true, true)
 	{
 		return asum(a - b);
 	}
 
-	DOLPHIN_DEF_GENERIC_METRIC(chebyshev_distance, T)
+	DOLPHIN_DEF_GENERIC_METRIC(chebyshev_distance, T, true, true)
 	{
 		return amax(a - b);
 	}
@@ -215,6 +233,8 @@ namespace dolphin
 	{
 		typedef T input_type;
 		typedef T result_type;
+		static const bool is_positive_definite = true;
+		static const bool is_symmetric = true;
 	};
 
 	template<typename T>
@@ -240,7 +260,7 @@ namespace dolphin
 	};
 
 
-	DOLPHIN_DEF_GENERIC_METRIC(hamming_distance, uint32_t)
+	DOLPHIN_DEF_GENERIC_METRIC(hamming_distance, uint32_t, true, true)
 	{
 		const index_t n = a.nelems();
 		LMAT_CHECK_DIMS( n == b.nelems() )
@@ -310,7 +330,7 @@ namespace dolphin
 		LMAT_DEFINE_AGGREG_SIMD_FOLDKERNEL(cosine_dist_stat, cosine_dist_kernel, 2)
 	}
 
-	DOLPHIN_DEF_GENERIC_METRIC(cosine_distance, T)
+	DOLPHIN_DEF_GENERIC_METRIC(cosine_distance, T, true, true)
 	{
 		const A& a_ = a.derived();
 		const B& b_ = b.derived();
@@ -324,24 +344,35 @@ namespace dolphin
 
 namespace lmat
 {
+	// matrix traits for pairwise metrics
+
 	template<class Dist, class Arg1, class Arg2>
 	struct matrix_traits<dolphin::pairwise_metric_expr<Dist, Arg1, Arg2> >
-	{
-		static const int num_dimensions = 2;
-		static const int ct_num_rows = meta::ncols<Arg1>::value;
-		static const int ct_num_cols = meta::ncols<Arg2>::value;
+	: public lmat::matrix_xpr_traits_base<
+	  typename Dist::result_type,
+	  meta::ncols<Arg1>::value,
+	  meta::ncols<Arg2>::value,
+	  typename meta::common_domain<Arg1, Arg2>::type> { };
 
-		static const bool is_readonly = true;
+	template<class Dist, class Arg>
+	struct matrix_traits<dolphin::self_pairwise_metric_expr<Dist, Arg> >
+	: public lmat::matrix_xpr_traits_base<
+	  typename Dist::result_type,
+	  meta::ncols<Arg>::value,
+	  meta::ncols<Arg>::value,
+	  typename meta::domain_of<Arg>::type> { };
 
-		typedef matrix_shape<ct_num_rows, ct_num_cols> shape_type;
-		typedef typename Dist::result_type value_type;
-		typedef typename meta::common_domain<Arg1, Arg2>::type domain;
-	};
+
+	// introduce SIMD support to cosine_dist_kernel
 
 	LMAT_DEF_SIMD_SUPPORT(dolphin::internal::cosine_dist_kernel)
 
 
-	// pair metric evaluation
+	/********************************************
+	 *
+	 *  generic pairwise evaluation
+	 *
+	 ********************************************/
 
 	template<typename Metric, class A, class B, class D>
 	void _evaluate(const dolphin::pairwise_metric_expr<Metric, A, B>& expr,
@@ -365,12 +396,103 @@ namespace lmat
 		}
 	}
 
+	template<typename Metric, class A, class D>
+	void _evaluate(const dolphin::self_pairwise_metric_expr<Metric, A>& expr,
+			IRegularMatrix<D, typename dolphin::metric_traits<Metric>::result_type>& dst)
+	{
+		D& dst_ = dst.derived();
+		const index_t n = expr.ncolumns();
+
+		const A& a = expr.arg();
+
+		const bool is_pos_def = dolphin::metric_traits<Metric>::is_positive_definite;
+		const bool is_symmetric = dolphin::metric_traits<Metric>::is_symmetric;
+		typedef typename dolphin::metric_traits<Metric>::result_type RT;
+
+		if (is_symmetric)
+		{
+			if (is_pos_def)
+			{
+				for (index_t j = 0; j < n; ++j)
+				{
+					auto aj = a.column(j);
+
+					for (index_t i = 0; i < j; ++i)
+						dst_(i, j) = dst_(j, i);
+
+					dst_(j, j) = RT(0);
+
+					for (index_t i = j+1; i < n; ++i)
+						dst_(i, j) = expr.metric()(a.column(i), aj);
+				}
+			}
+			else
+			{
+				for (index_t j = 0; j < n; ++j)
+				{
+					auto aj = a.column(j);
+
+					for (index_t i = 0; i < j; ++i)
+						dst_(i, j) = dst_(j, i);
+
+					for (index_t i = j; i < n; ++i)
+						dst_(i, j) = expr.metric()(a.column(i), aj);
+				}
+			}
+		}
+		else
+		{
+			if (is_pos_def)
+			{
+				for (index_t j = 0; j < n; ++j)
+				{
+					auto aj = a.column(j);
+
+					for (index_t i = 0; i < j; ++i)
+						dst_(i, j) = expr.metric()(a.column(i), aj);
+
+					dst_(j, j) = RT(0);
+
+					for (index_t i = j+1; i < n; ++i)
+						dst_(i, j) = expr.metric()(a.column(i), aj);
+				}
+			}
+			else
+			{
+				for (index_t j = 0; j < n; ++j)
+				{
+					auto aj = a.column(j);
+
+					for (index_t i = 0; i < n; ++i)
+						dst_(i, j) = expr.metric()(a.column(i), aj);
+				}
+			}
+		}
+	}
+
+
 	template<class Metric, class A, class B, class D>
 	inline void evaluate(const dolphin::pairwise_metric_expr<Metric, A, B>& expr,
 			IRegularMatrix<D, typename dolphin::metric_traits<Metric>::result_type>& dst)
 	{
 		_evaluate(expr, dst);
 	}
+
+	template<class Metric, class A, class D>
+	inline void evaluate(const dolphin::self_pairwise_metric_expr<Metric, A>& expr,
+			IRegularMatrix<D, typename dolphin::metric_traits<Metric>::result_type>& dst)
+	{
+		_evaluate(expr, dst);
+	}
+
+
+	/********************************************
+	 *
+	 *  specialized pairwise evaluation
+	 *
+	 ********************************************/
+
+	// sqeuclidean_distance
 
 	template<typename T, class A, class B, class D>
 	void evaluate(const dolphin::pairwise_metric_expr<dolphin::sqeuclidean_distance<T>, A, B>& expr,
@@ -393,6 +515,27 @@ namespace lmat
 		blas::gemm(T(-2), a, b, T(1), dst_, 'T', 'N');
 	}
 
+	template<typename T, class A, class D>
+	void evaluate(const dolphin::self_pairwise_metric_expr<dolphin::sqeuclidean_distance<T>, A>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+		const A& a = expr.arg();
+
+		const index_t n = a.ncolumns();
+
+		dense_col<T> sa2(n);
+		colwise_sqsum(a, sa2);
+
+		dst_ = repcol(sa2, n)  + reprow(as_row(sa2), n);
+		blas::gemm(T(-2), a, a, T(1), dst_, 'T', 'N');
+
+		auto dvs = dst_.diag();
+		dvs << T(0);
+	}
+
+	// euclidean_distance
+
 	template<typename T, class A, class B, class D>
 	void evaluate(const dolphin::pairwise_metric_expr<dolphin::euclidean_distance<T>, A, B>& expr,
 			IRegularMatrix<D, T>& dst)
@@ -403,6 +546,19 @@ namespace lmat
 		dst_ = dolphin::pairwise(sqdist, expr.arg1(), expr.arg2());
 		dst_ = sqrt(dst_);
 	}
+
+	template<typename T, class A, class D>
+	void evaluate(const dolphin::self_pairwise_metric_expr<dolphin::euclidean_distance<T>, A>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+
+		dolphin::sqeuclidean_distance<T> sqdist;
+		dst_ = dolphin::pairwise(sqdist, expr.arg());
+		dst_ = sqrt(dst_);
+	}
+
+	// cosine_distance
 
 	template<typename T, class A, class B, class D>
 	void evaluate(const dolphin::pairwise_metric_expr<dolphin::cosine_distance<T>, A, B>& expr,
@@ -423,6 +579,23 @@ namespace lmat
 
 		blas::gemm(a, b, dst_, 'T', 'N');
 		dst_ = T(1) - dst_ * sqrt(repcol(ra, n) * reprow(rb, m));
+	}
+
+	template<typename T, class A, class D>
+	void evaluate(const dolphin::self_pairwise_metric_expr<dolphin::cosine_distance<T>, A>& expr,
+			IRegularMatrix<D, T>& dst)
+	{
+		D& dst_ = dst.derived();
+		const A& a = expr.arg();
+
+		const index_t n = a.ncolumns();
+
+		dense_col<T> ra(n);
+
+		for (index_t i = 0; i < n; ++i) ra[i] = math::rcp(sqsum(a.column(i)));
+
+		blas::gemm(a, a, dst_, 'T', 'N');
+		dst_ = T(1) - dst_ * sqrt(repcol(ra, n) * reprow(as_row(ra), n));
 	}
 }
 

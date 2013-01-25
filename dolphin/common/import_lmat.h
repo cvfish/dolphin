@@ -16,6 +16,7 @@
 #include <dolphin/common/common_base.h>
 
 #include <light_mat/matrix/matrix_classes.h>
+#include <light_mat/matrix/matrix_asvec.h>
 #include <light_mat/matexpr/mat_arith.h>
 #include <light_mat/matexpr/mat_emath.h>
 #include <light_mat/matexpr/mat_pred.h>
@@ -74,6 +75,9 @@ namespace dolphin
 	using lmat::is_empty;
 	using lmat::is_scalar;
 	using lmat::is_square;
+
+	using lmat::as_col;
+	using lmat::as_row;
 
 	using lmat::in_;
 	using lmat::out_;

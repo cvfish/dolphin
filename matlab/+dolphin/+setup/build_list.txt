@@ -25,4 +25,7 @@ nrmexp : svml
 
 # metrics module
 
-+metrics/euclidean
++metrics/ldist : svml
++metrics/sqeuc
++metrics/hamdist
++metrics/cosdist

@@ -142,7 +142,13 @@ DEF_MY_DIST( my_cosine_distance )
 			ASSERT_EQ( D2.ncolumns(), N ); \
 			double tol = 1.0e-13; \
 			ASSERT_MAT_APPROX(M, N, D1, D0, tol); \
-			ASSERT_MAT_APPROX(M, N, D2, D0, tol); }
+			ASSERT_MAT_APPROX(M, N, D2, D0, tol); \
+			mat_t S0 = my_pairwise(a, a, my_##Name()); \
+			mat_t S2 = pairwise(dist, a); \
+			ASSERT_EQ( S2.nrows(), M ); \
+			ASSERT_EQ( S2.ncolumns(), M ); \
+			ASSERT_MAT_APPROX(M, M, S2, S0, tol); }
+
 
 #define DEF_DIST_TEST(Name) DEF_DIST_TEST_( Name, Name<double> dist )
 
