@@ -20,7 +20,7 @@ namespace dolphin
 {
 	template<typename TI, class Indices, typename TC, class Counts>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<Indices>::value &&
+		lmat::supports_linear_access<Indices>::value &&
 		supports_linear_index<Counts>::value,
 	void>::type
 	_add_counts(
@@ -31,7 +31,7 @@ namespace dolphin
 
 		const index_t n = I.nelems();
 		const index_t K = counts.nelems();
-		auto rd = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
+		auto rd = lmat::make_vec_accessor(lmat::scalar_(), in_(I.derived()));
 
 		for (index_t i = 0; i < n; ++i)
 		{
@@ -46,8 +46,8 @@ namespace dolphin
 
 	template<typename TI, class Iinds, typename TJ, class Jinds, typename TC, class Counts>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<Iinds>::value &&
-		lmat::supports_linear_macc<Jinds>::value,
+		lmat::supports_linear_access<Iinds>::value &&
+		lmat::supports_linear_access<Jinds>::value,
 	void>::type
 	_add_counts(
 			const IEWiseMatrix<Iinds, TI>& I,
@@ -59,8 +59,8 @@ namespace dolphin
 		const index_t n = I.nelems();
 		const index_t M = counts.nrows();
 		const index_t N = counts.ncolumns();
-		auto rd_i = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
-		auto rd_j = lmat::make_vec_accessor(lmat::atags::scalar(), in_(J.derived()));
+		auto rd_i = lmat::make_vec_accessor(lmat::scalar_(), in_(I.derived()));
+		auto rd_j = lmat::make_vec_accessor(lmat::scalar_(), in_(J.derived()));
 
 		for (index_t i = 0; i < n; ++i)
 		{
@@ -94,17 +94,17 @@ namespace dolphin
 	}
 
 
-	template<typename TI, class ISubs, typename T, class Values, class Result, class Folder>
+	template<typename TI, class ISubs, typename T, class Values, class Result, class Kernel>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
-		lmat::supports_linear_macc<Values>::value &&
+		lmat::supports_linear_access<ISubs>::value &&
+		lmat::supports_linear_access<Values>::value &&
 		supports_linear_index<Result>::value,
 	void>::type
 	dispatch_accum(
 			const IEWiseMatrix<Values, T>& values,
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result,
-			const Folder& folder)
+			const Kernel& kernel)
 	{
 		const Values& v = values.derived();
 		Result& r = result.derived();
@@ -114,8 +114,8 @@ namespace dolphin
 
 		check_arg(I.nelems() == n, "The sizes of I and values are inconsistent.");
 
-		auto rd_l = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
-		auto rd_v = lmat::make_vec_accessor(lmat::atags::scalar(), in_(v));
+		auto rd_l = lmat::make_vec_accessor(lmat::scalar_(), in_(I.derived()));
+		auto rd_v = lmat::make_vec_accessor(lmat::scalar_(), in_(v));
 
 		for (index_t i = 0; i < n; ++i)
 		{
@@ -123,7 +123,7 @@ namespace dolphin
 
 			if (k >= 0 && k < K)
 			{
-				folder.fold(r[k], rd_v.scalar(i));
+				kernel(r[k], rd_v.scalar(i));
 			}
 		}
 	}
@@ -135,7 +135,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, result, lmat::sum_folder<T>());
+		dispatch_accum(values, I, result, lmat::sum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
@@ -144,7 +144,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, result, lmat::maximum_folder<T>());
+		dispatch_accum(values, I, result, lmat::maximum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
@@ -153,16 +153,16 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, result, lmat::minimum_folder<T>());
+		dispatch_accum(values, I, result, lmat::minimum_kernel<T>());
 	}
 
 
 	template<typename TI, class ISubs, class JSubs,
-		typename T, class Values, class Result, class Folder>
+		typename T, class Values, class Result, class Kernel>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
-		lmat::supports_linear_macc<JSubs>::value &&
-		lmat::supports_linear_macc<Values>::value &&
+		lmat::supports_linear_access<ISubs>::value &&
+		lmat::supports_linear_access<JSubs>::value &&
+		lmat::supports_linear_access<Values>::value &&
 		supports_linear_index<Result>::value,
 	void>::type
 	dispatch_accum(
@@ -170,7 +170,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result,
-			const Folder& folder)
+			const Kernel& kernel)
 	{
 		const Values& v = values.derived();
 		Result& r = result.derived();
@@ -182,9 +182,9 @@ namespace dolphin
 		check_arg(I.nelems() == n && J.nelems() == n,
 				"The sizes of I, J, and values are inconsistent.");
 
-		auto rd_i = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
-		auto rd_j = lmat::make_vec_accessor(lmat::atags::scalar(), in_(J.derived()));
-		auto rd_v = lmat::make_vec_accessor(lmat::atags::scalar(), in_(v));
+		auto rd_i = lmat::make_vec_accessor(lmat::scalar_(), in_(I));
+		auto rd_j = lmat::make_vec_accessor(lmat::scalar_(), in_(J));
+		auto rd_v = lmat::make_vec_accessor(lmat::scalar_(), in_(v));
 
 		for (index_t i = 0; i < n; ++i)
 		{
@@ -193,7 +193,7 @@ namespace dolphin
 
 			if (ci >= 0 && ci < M && cj >= 0 && cj < N)
 			{
-				folder.fold(r(ci, cj), rd_v.scalar(i));
+				kernel(r(ci, cj), rd_v.scalar(i));
 			}
 		}
 	}
@@ -205,7 +205,7 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, J, result, lmat::sum_folder<T>());
+		dispatch_accum(values, I, J, result, lmat::sum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, class JSubs, typename T, class Values, class Result>
@@ -215,7 +215,7 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, J, result, lmat::maximum_folder<T>());
+		dispatch_accum(values, I, J, result, lmat::maximum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, class JSubs, typename T, class Values, class Result>
@@ -225,13 +225,13 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum(values, I, J, result, lmat::minimum_folder<T>());
+		dispatch_accum(values, I, J, result, lmat::minimum_kernel<T>());
 	}
 
 
-	template<typename TI, class JSubs, typename T, class Values, class Result, class Folder>
+	template<typename TI, class JSubs, typename T, class Values, class Result, class Kernel>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<JSubs>::value &&
+		lmat::supports_linear_access<JSubs>::value &&
 		is_percol_contiguous<Values>::value &&
 		is_percol_contiguous<Result>::value,
 	void>::type
@@ -239,7 +239,7 @@ namespace dolphin
 			const IEWiseMatrix<Values, T>& values,
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result,
-			const Folder& folder)
+			const Kernel& kernel)
 	{
 		const Values& v = values.derived();
 		Result& r = result.derived();
@@ -251,31 +251,28 @@ namespace dolphin
 		check_arg( J.nelems() == n, "The sizes of J and values are inconsistent" );
 		check_arg( r.nrows() == m, "The numbers of rows in values and result are inconsistent." );
 
-		auto rd_j = lmat::make_vec_accessor(lmat::atags::scalar(), in_(J.derived()));
-
-		lmat::_parfold_kernel<Folder> fker(folder);
+		auto rd_j = lmat::make_vec_accessor(lmat::scalar_(), in_(J.derived()));
 
 		typedef lmat::default_simd_kind skind;
 
-		typedef typename std::conditional<
-				lmat::is_simdizable<Folder, skind>::value &&
-				lmat::supports_simd<Values, skind, false>::value &&
-				lmat::supports_simd<Values, skind, false>::value,
-				lmat::atags::simd<lmat::default_simd_kind>,
-				lmat::atags::scalar
-		>::type atag;
+		const bool use_simd =
+				lmat::is_simdizable<Kernel, skind>::value &&
+				lmat::supports_simd<Values, skind>::value &&
+				lmat::supports_simd<Result, skind>::value;
 
-		auto vker = ewise(fker, atag());
+		typedef typename std::conditional<use_simd, lmat::simd_<skind>, lmat::scalar_>::type U;
 
-		auto rd = lmat::make_multicol_accessor(atag(), in_(v));
-		auto wt = lmat::make_multicol_accessor(atag(), in_out_(r));
+		auto rd = lmat::make_multicol_accessor(U(), in_(v));
+		auto wt = lmat::make_multicol_accessor(U(), in_out_(r));
+
+		dimension<0> col_dim(m);
 
 		for (index_t j = 0; j < n; ++j)
 		{
 			index_t cj = static_cast<index_t>(rd_j.scalar(j));
 			if (cj >= 0 && cj < K)
 			{
-				vker.apply(m, wt.col(cj), rd.col(j));
+				lmat::internal::_linear_ewise_eval(col_dim, U(), kernel, wt.col(cj), rd.col(j));
 			}
 		}
 	}
@@ -287,7 +284,7 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(values, J, result, lmat::sum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::sum_kernel<T>());
 	}
 
 	template<typename TI, class JSubs, typename T, class Values, class Result>
@@ -296,7 +293,7 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(values, J, result, lmat::maximum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::maximum_kernel<T>());
 	}
 
 	template<typename TI, class JSubs, typename T, class Values, class Result>
@@ -305,13 +302,13 @@ namespace dolphin
 			const IEWiseMatrix<JSubs, TI>& J,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_cols(values, J, result, lmat::minimum_folder<T>());
+		dispatch_accum_cols(values, J, result, lmat::minimum_kernel<T>());
 	}
 
 
-	template<typename TI, class ISubs, typename T, class Values, class Result, class Folder>
+	template<typename TI, class ISubs, typename T, class Values, class Result, class Kernel>
 	inline typename std::enable_if<
-		lmat::supports_linear_macc<ISubs>::value &&
+		lmat::supports_linear_access<ISubs>::value &&
 		is_percol_contiguous<Values>::value &&
 		is_percol_contiguous<Result>::value,
 	void>::type
@@ -319,7 +316,7 @@ namespace dolphin
 			const IEWiseMatrix<Values, T>& values,
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result,
-			const Folder& folder)
+			const Kernel& kernel)
 	{
 		const Values& v = values.derived();
 		Result& r = result.derived();
@@ -331,7 +328,7 @@ namespace dolphin
 		check_arg( I.nelems() == m, "The sizes of J and values are inconsistent" );
 		check_arg( r.ncolumns() == n, "The numbers of columns in values and result are inconsistent." );
 
-		auto rd_i = lmat::make_vec_accessor(lmat::atags::scalar(), in_(I.derived()));
+		auto rd_i = lmat::make_vec_accessor(lmat::scalar_(), in_(I.derived()));
 
 		for (index_t j = 0; j < n; ++j)
 		{
@@ -343,7 +340,7 @@ namespace dolphin
 				index_t ci = rd_i.scalar(i);
 				if (ci >= 0 && ci < K)
 				{
-					folder.fold(rj[ci], vj[i]);
+					kernel(rj[ci], vj[i]);
 				}
 			}
 		}
@@ -356,7 +353,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(values, I, result, lmat::sum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::sum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
@@ -365,7 +362,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(values, I, result, lmat::maximum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::maximum_kernel<T>());
 	}
 
 	template<typename TI, class ISubs, typename T, class Values, class Result>
@@ -374,7 +371,7 @@ namespace dolphin
 			const IEWiseMatrix<ISubs, TI>& I,
 			IRegularMatrix<Result, T>& result)
 	{
-		dispatch_accum_rows(values, I, result, lmat::minimum_folder<T>());
+		dispatch_accum_rows(values, I, result, lmat::minimum_kernel<T>());
 	}
 
 }

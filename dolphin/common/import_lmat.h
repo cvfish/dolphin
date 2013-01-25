@@ -80,7 +80,9 @@ namespace dolphin
 	using lmat::in_out_;
 
 	using lmat::ewise;
-	using lmat::percol;
+	using lmat::map;
+	using lmat::map_to;
+	using lmat::accum_to;
 
 	// import math functions
 
@@ -141,6 +143,8 @@ namespace dolphin
 	using lmat::atanh;
 
 	// import reduction functions
+
+	using lmat::fold;
 
 	using lmat::sum;
 	using lmat::mean;

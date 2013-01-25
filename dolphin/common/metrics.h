@@ -15,6 +15,7 @@
 
 #include <dolphin/common/import_lmat.h>
 #include <light_mat/linalg/blas_l3.h>
+#include <tuple>
 
 #define DOLPHIN_DEF_GENERIC_METRIC(Name, RT) \
 	template<typename T> struct Name; \
@@ -244,8 +245,8 @@ namespace dolphin
 		const index_t n = a.nelems();
 		LMAT_CHECK_DIMS( n == b.nelems() )
 
-		auto rd_a = lmat::make_vec_accessor(lmat::atags::scalar(), in_(a));
-		auto rd_b = lmat::make_vec_accessor(lmat::atags::scalar(), in_(b));
+		auto rd_a = lmat::make_vec_accessor(lmat::scalar_(), in_(a));
+		auto rd_b = lmat::make_vec_accessor(lmat::scalar_(), in_(b));
 
 		result_type s(0);
 		for (index_t i = 0; i < n; ++i)
@@ -257,35 +258,65 @@ namespace dolphin
 	namespace internal
 	{
 		template<typename T>
-		struct _cosine_dist_kernel
+		struct cosine_dist_stat
 		{
-			typedef T value_type;
+			T xx;
+			T xy;
+			T yy;
 
-			void operator() (const T& x, const T& y, T& xx, T& xy, T& yy) const
+			DOLPHIN_ENSURE_INLINE
+			cosine_dist_stat() { }
+
+			DOLPHIN_ENSURE_INLINE
+			cosine_dist_stat(const T& x, const T& y)
+			: xx(x * x)
+			, xy(x * y)
+			, yy(y * y)
+			{ }
+
+			DOLPHIN_ENSURE_INLINE
+			void update(const T& x, const T& y)
 			{
-				T _xx = x * x;
-				T _xy = x * y;
-				T _yy = y * y;
+				T xx_ = x * x;
+				T xy_ = x * y;
+				T yy_ = y * y;
 
-				xx += _xx;
-				xy += _xy;
-				yy += _yy;
+				xx += xx_;
+				xy += xy_;
+				yy += yy_;
 			}
+
+			DOLPHIN_ENSURE_INLINE
+			void update(const cosine_dist_stat& b)
+			{
+				xx += b.xx;
+				xy += b.xy;
+				yy += b.yy;
+			}
+
 		};
+
+		template<typename T, typename Kind>
+		DOLPHIN_ENSURE_INLINE
+		inline cosine_dist_stat<T> reduce_impl(const cosine_dist_stat<lmat::simd_pack<T, Kind> >& s)
+		{
+			cosine_dist_stat<T> r;
+			r.xx = sum(s.xx);
+			r.xy = sum(s.xy);
+			r.yy = sum(s.yy);
+			return r;
+		}
+
+		LMAT_DEFINE_AGGREG_SIMD_FOLDKERNEL(cosine_dist_stat, cosine_dist_kernel, 2)
 	}
 
 	DOLPHIN_DEF_GENERIC_METRIC(cosine_distance, T)
 	{
-		T xx(0);
-		T xy(0);
-		T yy(0);
+		const A& a_ = a.derived();
+		const B& b_ = b.derived();
 
-		ewise(internal::_cosine_dist_kernel<T>())(a.nelems(), in_(a), in_(b),
-				in_out_(xx, lmat::atags::sum()),
-				in_out_(xy, lmat::atags::sum()),
-				in_out_(yy, lmat::atags::sum()));
-
-		return T(1) - ( xy / math::sqrt(xx * yy) );
+		auto r = fold(internal::cosine_dist_kernel<T>())(common_shape(a_, b_), in_(a_), in_(b_));
+		return T(1) - ( r.xy / math::sqrt(r.xx * r.yy) );
 	}
 
 }
@@ -307,7 +338,7 @@ namespace lmat
 		typedef typename meta::common_domain<Arg1, Arg2>::type domain;
 	};
 
-	LMAT_DEF_SIMD_SUPPORT(dolphin::internal::_cosine_dist_kernel)
+	LMAT_DEF_SIMD_SUPPORT(dolphin::internal::cosine_dist_kernel)
 
 
 	// pair metric evaluation
